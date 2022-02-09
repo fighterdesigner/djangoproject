@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container pt-5">
+  {% if questions %}
+    {% for quation in questions %}
+    <div class="accordion accordion-flush col-12 col-md-6 mx-auto mb-3" id="quation{{quation.id}}">
+        <div class="accordion-item">
+          <h2 class="accordion-header d-flex flex-row" id="flush-headingOne">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapse{{quation.id}}" aria-expanded="false" aria-controls="flush-collapseOne">
+              {{ quation.question_text }}
+              <p class="mb-0 ms-3">{{ quation.pub_date | date:"D d M Y" }} {{ quation.pub_date | time:"H:i A" }}</p>
+              {% if user.is_authenticated and user.id == quation.user.id %}
+              <form class="m-2" action="/delete" method="post">
+                {% csrf_token %}
+                <input type="hidden" value="{{quation.id}}" name="question_id">
+                <button type="submit" class="btn btn-primary bg-danger btn-sm">X</button>
+              </form>
+              {% endif %}
+            </button>
+          </h2>
+          <div id="flush-collapse{{quation.id}}" class="accordion-collapse collapse mb-3" aria-labelledby="flush-headingOne" data-bs-parent="#quation{{quation.id}}">
+            <div class="accordion-body">
+              {% for choice in quation.choice_set.all %}
+              <div class="d-flex flex-row justify-content-between align-items-center">
+              <p class="m-0"><span class="badge bg-warning text-dark">{{ choice.user.username }}:</span> {{ choice.choice_text }}</p>
+              {% if user.is_authenticated %}
+              <div class="d-flex flex-row justify-content-center align-items-center">
+                <form class="me-1 mb-0" action="/vote" method="post">
+                  {% csrf_token %}
+                  <input type="hidden" value="1" name="vote_down">
+                  <input type="hidden" value="{{choice.id}}" name="id">
+                  <button type="submit" class="btn btn-success btn-sm"><i class="fas fa-arrow-down"></i></button>
+                </form>
+                <form class="mb-0" action="/vote" method="post">
+                  {% csrf_token %}
+                  <input type="hidden" value="1" name="vote_up">
+                  <input type="hidden" value="{{choice.id}}" name="id">
+                  <button type="submit" class="btn btn-success btn-sm"><i class="fas fa-arrow-up"></i></button>
+                </form>                
+              </div>
+              {% endif %}
+              <span class="badge bg-primary">{{ choice.votes | stringformat:"+d" }}</span>
+              </div>
+              {% endfor %}
+              {% if user.is_authenticated and user.id != quation.user.id %}
+                <div class="mt-5">
+                  <form class="input-group" action="/answer" method="POST">
+                    {% csrf_token %}
+                  <input type="hidden" value="{{quation.id}}" name="question_id">
+                  <input type="text" name="choice_text" class="form-control" placeholder="Answer..." aria-label="Recipient's username" aria-describedby="button-addon2" required>
+                  <button class="btn btn-outline-secondary" type="submit" id="button-addon2">Answer</button>
+                  </form>
+                </div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+    {% endfor %} 
+    {% else %}
+    <div class="alert alert-primary col-12 col-md-6 mx-auto" role="alert">
+      there is now quations for now make one !
+    </div>
+    {% endif %}
+    {% if user.is_authenticated %}
+    <form class="mt-5 d-flex flex-column justify-content-center col-12 col-md-6 mx-auto" action="/question" method="POST">
+        {% csrf_token %}
+        <div class="mb-1">
+            <label for="inputQuestion" class="form-label text-white">Question:</label>
+            <input name="question_text" type="text" class="form-control" id="inputQuestion" aria-describedby="emailHelp" placeholder="Question ?" required>
+        </div>
+        <button type="submit" class="btn btn-primary mt-3">Submit</button>
+      </form>        
+      <div class="d-flex justify-content-center">
+        <a class="mx-auto" href="{% url 'logout' %}"><button type="button" class="btn btn-outline-danger">Logout</button></a>
+      </div>
+      {% else %}
+      <div class="alert alert-light col-12 col-md-6 mx-auto" role="alert">
+        Please <a href="{% url 'login' %}">Sign In</a> Or <a href="{% url 'signup' %}">Sign Up</a> To Post Questions
+      </div>
+      {% endif %}
+</div>
+{% endblock content %}
